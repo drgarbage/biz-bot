@@ -24,12 +24,8 @@ const page = () => {
       .catch(console.error);
   }, [invoiceId, setInvoice]);
 
-  const total = !!invoice?.items ? 
-    invoice.items.reduce((pre, cur)=> pre + parseFloat(cur.subtotal), 0):
-    0;
-
   return (
-    <Container>
+    <Container sx={{p:5, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
       
       <Head>
         <title>檢視發票</title>
@@ -39,6 +35,7 @@ const page = () => {
 
       <Button 
         fullWidth
+        sx={{mt:5}}
         variant="contained"
         onClick={()=>liff.closeWindow()}
       >

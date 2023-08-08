@@ -1,7 +1,7 @@
 import { Client } from '@line/bot-sdk';
 import { onText } from "./handlers";
 
-const { CHANNEL_ID, CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET } = process.env;
+const { CHANNEL_ID, CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET, LIFF_URL } = process.env;
 
 const config = {
   channelAccessToken: CHANNEL_ACCESS_TOKEN,
@@ -9,7 +9,7 @@ const config = {
 };
 const client = new Client(config);
 
-const handleEvent = (event) => {
+const handleEvent = async (event) => {
 
   if (event.type === 'message' && event.message.type === 'text') {
     const message = onText(event);
@@ -21,17 +21,17 @@ const handleEvent = (event) => {
 
 export default (req, res) => {
 
-  if(req.method === 'POST') {
+  // if(req.method === 'POST') {
     return Promise
       .all(req.body.events.map(handleEvent))
-      .then((result) => res.json(result))
+      .then((result) => res.json(result[0]))
       .catch((err)=>{
         console.error(err);
         res.status(500).end();
       });
-  } else {
-    res.status(500).end();
-    return Promise.resolve();
-  }
+  // } else {
+  //   res.status(500).end();
+  //   return Promise.resolve();
+  // }
 
 }

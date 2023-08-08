@@ -43,8 +43,9 @@ export const invoices = (options) =>
   documents('invoices', options);
 
 export const createInvoice = async (userId, invoice) => {
-  const { companyName : sellerName} = await companyInfo(invoice.sellerBAN);
-  const { companyName: buyerName } = await companyInfo(invoice.buyerBAN);
+  // @todo: 找不到公司名稱時應如何處理？
+  const { companyName : sellerName} = await companyInfo(invoice.sellerBAN).catch(err=>({companyName: ''}));
+  const { companyName: buyerName } = await companyInfo(invoice.buyerBAN).catch(err=>({companyName: ''}));
 
   for(let i = 0; i < invoice.items.length; i++){
     let { price, quantity } = invoice.items[i];
@@ -68,7 +69,7 @@ export const createInvoice = async (userId, invoice) => {
     amount,
     createAt: new Date()
   };
-  console.log(invoiceData);
+
   const { id: invoiceId } = await append('invoices', invoiceData);
   await update('invoices', invoiceId, { id: invoiceId});
   return invoiceId;
