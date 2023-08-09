@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { invoices as fetchInvoices } from "@/lib/api-company";
-import { Avatar, Button, Container, IconButton, List, ListItem, ListItemAvatar, ListItemText } from "@mui/material";
+import { companyInfo, invoices as fetchInvoices } from "@/lib/api-company";
+import { Accordion, AccordionDetails, AccordionSummary, Avatar, Box, Button, Container, IconButton, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, Paper, Stack } from "@mui/material";
 import { useRouter } from "next/router";
+import { useFormatter } from "next-intl";
+import { InvoiceView } from "@/components/view-invoice";
 import ReceiptIcon from '@mui/icons-material/Receipt';
-import { useFormatter, useTranslations } from "next-intl";
+import CorporateFareIcon from '@mui/icons-material/CorporateFare';
+import moment from "moment";
 
 const { default: Layout } = require("@/components/layout");
 
@@ -62,17 +65,21 @@ const convertToCSV = (invoices, format) => {
 }
 
 const page = () => {
-  const t = useTranslations()
   const format = useFormatter();
   const router = useRouter();
   const {agentId, customerId} = router.query;
   const [invoices, setInvoices] = useState([]);
+  const [seller, setSeller] = useState();
 
   useEffect(()=>{
+    if(!customerId) return;
     fetchInvoices({sellerBAN: customerId})
       .then(setInvoices)
       .catch(console.error);
-  }, []);
+    companyInfo(customerId)
+      .then(setSeller)
+      .catch(console.error);
+  }, [customerId, setInvoices, setSeller]);
 
   const downloadCSV = () => {
     const csvData = convertToCSV(invoices, format);
@@ -90,26 +97,48 @@ const page = () => {
   return (
     <Container>
 
-      <Button onClick={downloadCSV}>下載CSV</Button>
+      <Box m={2} display="flex" flexDirection="column" alignItems="center">
+        <Avatar sx={{m:1, width: 72, height: 72}}>
+          <CorporateFareIcon fontSize="large" />
+        </Avatar>
+        <strong>{seller?.companyName}</strong>
+        <label>{customerId}</label>
+      </Box>
+
+      <Paper sx={{m: 2}}>
+        <Button onClick={downloadCSV}>下載CSV</Button>
+      </Paper>
 
       <List>
-        { invoices?.length > 0 && invoices.map((invoice) => 
+        { invoices?.length > 0 && invoices.map((invoice, index) => 
           <ListItem
-            key={invoice.id}
-            secondaryAction={
-              <IconButton href={`customers/${invoice?.id}`}>
-                <ReceiptIcon />
-              </IconButton>
-            }>
-            <ListItemAvatar>
-              <Avatar>
-                <ReceiptIcon />
-              </Avatar>
-            </ListItemAvatar>
-            <ListItemText 
-              primary={invoice?.buyerName} 
-              secondary={invoice?.buyerBAN}
-              />
+            key={invoice.id}>
+              <Accordion sx={{flex: 1}}>
+                <AccordionSummary>
+
+                  <ListItemAvatar>
+                    <Avatar>
+                      <ReceiptIcon />
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText>
+                    <Box display="flex" flexDirection="column">
+                      <strong>{'BN' + String(index).padStart(10, '0')}</strong>
+                      <small>{invoice?.buyerName}</small>
+                      <small>{moment(invoice?.date.toDate()).format('yyyy/MM/DD')}</small>
+                    </Box>
+                  </ListItemText>
+                  <ListItemSecondaryAction>
+                    <label style={{fontSize: '24px'}}>{format.number(invoice?.amount)}</label>
+                  </ListItemSecondaryAction>
+
+                </AccordionSummary>
+                <AccordionDetails>
+
+                  <InvoiceView invoice={invoice} />
+
+                </AccordionDetails>
+              </Accordion>
           </ListItem>
         )}
       </List>

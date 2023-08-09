@@ -4,12 +4,12 @@ import {
 } from "@mui/material";
 import { useFormatter, useTranslations } from "next-intl";
 
-export const InvoiceView = ({invoice}) =>{
-  const t = useTranslations();
+export const InvoiceView = (props) =>{
+  const {invoice} = props;
   const format = useFormatter();
   
   return (
-    <Card sx={{maxWidth: 320}}>
+    <Card {...props}>
       <CardHeader 
         title={invoice?.buyerName} 
         subheader={
@@ -33,7 +33,7 @@ export const InvoiceView = ({invoice}) =>{
               <Box key={index} sx={{display: 'flex', flexDirection: 'row'}}>
                 <label style={{flex:1}}>{item?.name}</label>
                 <label style={{textAlign: 'right'}}>{item?.quantity}</label>
-                <label style={{flex:1, textAlign: 'right'}}>{format.number(item?.amount)}</label>
+                <label style={{flex:1, textAlign: 'right'}}>{format.number(item?.price * item?.quantity)}</label>
               </Box>
             )
           }
