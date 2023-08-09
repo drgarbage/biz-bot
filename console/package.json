@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "docker:build": "docker build -t drgarbage/biz-bot:latest .",
+    "docker:push": "docker push drgarbage/biz-bot:latest",
+    "docker:reload": "ssh -t -p 50322 -i ~/.ssh/id_rsa rhythm@dev.printii.com 'bash -i -c \"./Development/02.Projects/biz-bot/reload.sh\"'",
+    "deploy": "yarn docker:build && yarn docker:push"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -16,6 +20,7 @@
     "@mui/icons-material": "^5.14.3",
     "@mui/material": "^5.14.3",
     "firebase": "^10.1.0",
+    "jest-worker": "^29.6.2",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "next": "13.4.12",

@@ -2,7 +2,7 @@ import moment from "moment";
 const { LIFF_URL } = process.env;
 
 const createInvliceFlexMessage = (invoice) => {
-  const { date, buyerBAN, buyerName, tax, amount } = invoice;
+  const { date = new Date(), buyerBAN, buyerName, tax, amount } = invoice;
   
   const contents = {
     type: 'bubble',
@@ -12,7 +12,7 @@ const createInvliceFlexMessage = (invoice) => {
       contents: [
         {
           "type": "text",
-          "text": "發票內容如下，可以送出嗎？"
+          "text": "已為您開立發票內容如下"
         }
       ]
     },
@@ -155,16 +155,8 @@ const createInvliceFlexMessage = (invoice) => {
           type: 'button',
           action: {
             type: 'uri',
-            label: '修正',
+            label: '變更內容',
             uri: `${LIFF_URL}/invoices/${invoice?.id}/edit`,
-          },
-        },
-        {
-          type: 'button',
-          action: {
-            type: 'uri',
-            label: '送出發票',
-            uri: `${LIFF_URL}/invoices/${invoice?.id}/confirm`,
           },
         },
       ],
@@ -180,7 +172,7 @@ const createInvliceFlexMessage = (invoice) => {
 
   return {
     type: 'flex',
-    altText: `開立發票金額 ${amount} 給 ${buyerName}`,
+    altText: `開立發票金額 ${amount.toFixed()} 給 ${buyerName}`,
     contents
   }
 };
