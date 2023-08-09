@@ -72,8 +72,12 @@ const parseInvoice = (message) => {
 const handleInvoiceCreate = async (event) => {
   const recognizedInvoice = parseInvoice(event.message.text);
 
-  if(!recognizedInvoice)
-    throw new Error('Unable to recognize invoice.');
+  if(!recognizedInvoice) {
+    return {
+      type: 'text',
+      text: '很抱歉，我不認得您指定的格式，請參考以下格式：\n幫我開發票給[買方公司名稱] 統編[買方統編] [品名] 金額[金額] [含稅|稅外加]'
+    }
+  }
 
   const invoice = await createInvoice(event.source.userId, recognizedInvoice);
 

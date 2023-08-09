@@ -9,7 +9,7 @@
     "lint": "next lint",
     "docker:build": "docker build -t drgarbage/biz-bot:latest .",
     "docker:push": "docker push drgarbage/biz-bot:latest",
-    "docker:reload": "ssh -t -p 50322 -i ~/.ssh/id_rsa rhythm@dev.printii.com 'bash -i -c \"./Development/02.Projects/biz-bot/reload.sh\"'",
+    "docker:reload": "ssh -t -p 50322 -i ~/.ssh/id_rsa drgarbage@ai.printii.com 'bash -i -c \"sudo /media/disk/Development/02.Projects/setup.sh --only biz-bot\"'",
     "deploy": "yarn docker:build && yarn docker:push"
   },
   "dependencies": {
