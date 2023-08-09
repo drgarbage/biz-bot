@@ -111,6 +111,11 @@ export const onText = (event) => {
           },
           {
             type: 'uri',
+            label: '發票管理',
+            uri: 'https://bot.printii.com/agents/0/customers', 
+          },
+          {
+            type: 'uri',
             label: '開發票',
             uri: LIFF_URL + '/invoices/create', 
           }
