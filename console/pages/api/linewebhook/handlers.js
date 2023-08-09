@@ -70,25 +70,36 @@ const parseInvoice = (message) => {
 };
 
 const handleInvoiceCreate = async (event) => {
-  const recognizedInvoice = parseInvoice(event.message.text);
+  try{
 
-  if(!recognizedInvoice) {
+    const recognizedInvoice = parseInvoice(event.message.text);
+  
+    if(!recognizedInvoice) {
+      return {
+        type: 'text',
+        text: '很抱歉，我不認得您指定的格式，請參考以下格式：\n幫我開發票給[買方公司名稱] 統編[買方統編] [品名] 金額[金額] [含稅|稅外加]'
+      }
+    }
+  
+    const invoice = await createInvoice(event.source.userId, recognizedInvoice);
+  
+    return createInvliceFlexMessage(invoice, {
+      header: invoiceHeadMessage("已為您開立發票內容如下"),
+      footer: invoiceFootActions([{
+        type: 'uri',
+        label: '變更內容',
+        uri: `${LIFF_URL}/invoices/${invoice?.id}/edit`,
+      }]),
+    });
+
+  }catch(err){
+
     return {
       type: 'text',
-      text: '很抱歉，我不認得您指定的格式，請參考以下格式：\n幫我開發票給[買方公司名稱] 統編[買方統編] [品名] 金額[金額] [含稅|稅外加]'
-    }
+      text: `很抱歉，在開發票的過程中發生一些錯誤。\n\n錯誤：${err.message}`
+    };
+    
   }
-
-  const invoice = await createInvoice(event.source.userId, recognizedInvoice);
-
-  return createInvliceFlexMessage(invoice, {
-    header: invoiceHeadMessage("已為您開立發票內容如下"),
-    footer: invoiceFootActions([{
-      type: 'uri',
-      label: '變更內容',
-      uri: `${LIFF_URL}/invoices/${invoice?.id}/edit`,
-    }]),
-  });
 
 }
 

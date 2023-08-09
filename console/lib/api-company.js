@@ -74,6 +74,6 @@ export const updateInvoice = (invoiceId, invoice) =>
   update('invoices', invoiceId, invoice);
 
 export const companyInfo = async (companyBAN) => {
-  const host = !!window ? '' : 'https://bot.printii.com';
+  const host = typeof window !== 'undefined' ? '' : 'https://bot.printii.com';
   return request(`${host}/api/company/${companyBAN}`);
 }
