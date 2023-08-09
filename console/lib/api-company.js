@@ -37,6 +37,9 @@ export const setupLineUserConfig = async ({
     companies: [companyBAN]
   });
 
+export const lineUserConfig = (userId) =>
+  document('line-users', userId);
+
 export const invoice = (invoiceId) =>
   document('invoices', invoiceId);
 
@@ -45,17 +48,20 @@ export const invoices = (options) =>
 
 export const createInvoice = async (userId, invoice) => {
   // @todo: 找不到公司名稱時應如何處理？
-  const { companyName : sellerName} = await companyInfo(invoice.sellerBAN).catch(err=>({companyName: ''}));
-  const { companyName: buyerName } = await companyInfo(invoice.buyerBAN).catch(err=>({companyName: ''}));
+  const config = await lineUserConfig(userId);
+  const [sellerBAN] = config.companies;
+  const { companyName: sellerName} = await companyInfo(sellerBAN).catch(err => {console.error(err); return {companyName: ''}});
+  const { companyName: buyerName } = await companyInfo(invoice?.buyerBAN).catch(err => {console.error(err); return {companyName: ''}});
 
   // @todo: invoiceId 應該改用發票字軌
 
   const invoiceData = attachInvoiceCalculation({
     ...invoice,
-    date: new Date(),
     owner: userId,
+    sellerBAN,
     sellerName,
     buyerName,
+    date: new Date(),
     createAt: new Date()
   });
 
@@ -68,4 +74,4 @@ export const updateInvoice = (invoiceId, invoice) =>
   update('invoices', invoiceId, invoice);
 
 export const companyInfo = async (companyBAN) => 
-  request(`/api/company/${companyBAN}`);
+  request(`https://bot.printii.com/api/company/${companyBAN}`);

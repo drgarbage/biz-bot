@@ -89,14 +89,14 @@ const handleInvoiceCreate = async (event) => {
 }
 
 
-export const onText = async (event) => {
+export const onText = (event) => {
 
   if(event.message.text.startsWith('幫我開發票')) {
     return handleInvoiceCreate(event);
   }
   
   if(event.message.text === '小幫手') {
-    return {
+    return Promise.resolve({
       type: 'template',
       altText: '小幫手選單',
       template: {
@@ -116,8 +116,8 @@ export const onText = async (event) => {
           }
         ]
       }
-    };
+    });
   }
 
-  return null;
+  return Promise.resolve(null);
 }
