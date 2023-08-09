@@ -9,6 +9,7 @@ import {
 import BANField from '@/components/view-ban';
 import LineLayout from '@/components/layout-line';
 import Head from "next/head";
+import { attachInvoiceCalculation, calculateInvoice } from "@/lib/util-invoice";
 
 const Section = ({children}) =>
   <Box sx={{
@@ -24,10 +25,7 @@ const page = () => {
   const [invoice, setInvoice] = useState({
     sellerBAN: null,
     buyerBAN: null, // buyer_ban
-    total: 0,
     taxType: 1, // 1: 應稅 2: 零稅率 3: 免稅
-    tax: 0,
-    amount: 0,
     items: [
       {               // item_sequence_number
         name: '',     // item_description
@@ -51,13 +49,13 @@ const page = () => {
   const confirmInvoice = async () => {
     if(!profile?.userId) return;
     try{
-      const filtered = {
+      const filtered = attachInvoiceCalculation({
         ...invoice, 
         items: invoice.items.filter( p => 
           !!p.quantity &&
           parseFloat(p.quantity) > 0)
-      };
-      const invoiceId = await createInvoice(profile.userId, filtered);
+      });
+      const { id: invoiceId } = await createInvoice(profile.userId, filtered);
       router.replace(`/line/invoices/${invoiceId}`);
     }catch(err){
       console.error(err.messenge);
@@ -72,11 +70,7 @@ const page = () => {
     setInvoice({...invoice, sellerBAN });
   }, [profile, setInvoice]);
 
-  const total = !!invoice.items ? 
-    invoice.items.reduce((pre, cur)=> 
-      pre + parseFloat(cur.price) * parseFloat(cur.quantity), 0):0;
-  const tax = invoice?.taxType === 1 ? Math.round(total * 0.05) : 0;
-  const amount = total + tax;
+  const { total = 0, tax = 0, amount = 0 } = calculateInvoice(invoice);
   const isReady = total > 0 &&
     invoice?.sellerBAN?.length > 0 &&
     invoice?.buyerBAN?.length > 0;

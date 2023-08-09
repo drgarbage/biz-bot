@@ -1,183 +1,9 @@
-import moment from "moment";
+import { createInvoice } from "@/lib/api-company";
+import { createInvliceFlexMessage, invoiceFootActions, invoiceHeadMessage } from "@/lib/bot-messages";
+import { attachInvoiceCalculation, evenRound } from "@/lib/util-invoice";
 const { LIFF_URL } = process.env;
 
-const createInvliceFlexMessage = (invoice) => {
-  const { date = new Date(), buyerBAN, buyerName, tax, amount } = invoice;
-  
-  const contents = {
-    type: 'bubble',
-    header: {
-      type: "box",
-      layout: "vertical",
-      contents: [
-        {
-          "type": "text",
-          "text": "已為您開立發票內容如下"
-        }
-      ]
-    },
-    body: {
-      type: 'box',
-      layout: 'vertical',
-      contents: [
-        {
-          type: 'text',
-          text: buyerName,
-          weight: 'bold',
-          size: 'xl',
-        },
-        {
-          type: 'box',
-          layout: 'vertical',
-          margin: 'lg',
-          spacing: 'sm',
-          contents: [
-            {
-              type: 'box',
-              layout: 'baseline',
-              spacing: 'sm',
-              contents: [
-                {
-                  type: 'text',
-                  text: '統一編號',
-                  color: '#aaaaaa',
-                  size: 'sm',
-                  flex: 1,
-                },
-                {
-                  type: 'text',
-                  text: buyerBAN,
-                  wrap: true,
-                  color: '#666666',
-                  size: 'sm',
-                  flex: 3,
-                },
-              ],
-            },
-            {
-              type: 'box',
-              layout: 'baseline',
-              spacing: 'sm',
-              contents: [
-                {
-                  type: 'text',
-                  text: '發票日期',
-                  color: '#aaaaaa',
-                  size: 'sm',
-                  flex: 1,
-                },
-                {
-                  type: 'text',
-                  text: moment(date).format('yyyy 年 MM 月 DD 日'), // todo: handle date type
-                  wrap: true,
-                  color: '#666666',
-                  size: 'sm',
-                  flex: 3,
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: 'separator',
-          margin: '10px',
-        },
-        ...invoice.items.map((item) => ({
-          type: 'box',
-          layout: 'horizontal',
-          contents: [
-            {
-              type: 'text',
-              text: item.name,
-            },
-            {
-              type: 'text',
-              text: item.quantity.toString(),
-              align: 'end',
-            },
-            {
-              type: 'text',
-              text: item.price.toFixed(0),
-              align: 'end',
-            },
-          ],
-          margin: '10px',
-        })),
-        {
-          type: 'separator',
-          margin: '10px',
-        },
-        {
-          type: 'box',
-          layout: 'horizontal',
-          contents: [
-            {
-              type: 'text',
-              text: '稅額',
-            },
-            {
-              type: 'text',
-              text: tax.toFixed(),
-              align: 'end',
-            },
-          ],
-          margin: '10px',
-        },
-        {
-          type: 'separator',
-          margin: '10px',
-        },
-        {
-          type: 'box',
-          layout: 'horizontal',
-          contents: [
-            {
-              type: 'text',
-              text: '總計',
-            },
-            {
-              type: 'text',
-              text: amount.toFixed(),
-              size: '32px',
-              align: 'end',
-            },
-          ],
-          margin: '10px',
-        },
-      ],
-    },
-    footer: {
-      type: 'box',
-      layout: 'vertical',
-      spacing: 'sm',
-      contents: [
-        {
-          type: 'button',
-          action: {
-            type: 'uri',
-            label: '變更內容',
-            uri: `${LIFF_URL}/invoices/${invoice?.id}/edit`,
-          },
-        },
-      ],
-      flex: 0,
-      margin: '10px',
-    },
-    styles: {
-      body: {
-        backgroundColor: '#EEEEEE',
-      },
-    },
-  };
-
-  return {
-    type: 'flex',
-    altText: `開立發票金額 ${amount.toFixed()} 給 ${buyerName}`,
-    contents
-  }
-};
-
-const handleInvoiceCreate = (message) => {
+const parseInvoice = (message) => {
   const regexSingle = /幫我開發票給(.+) 統編(.+) (.+) 金額(.+) (含稅|稅外加)/;
   const regexMultiple = /幫我開發票給(.+) 統編(.+)((\n-.+)+)/;
 
@@ -191,27 +17,21 @@ const handleInvoiceCreate = (message) => {
     const rawAmount = parseFloat(matchSingle[4]);
     const isTaxInclude = matchSingle[5] === '含稅';
     const taxType = 1;
-    const total = isTaxInclude ? rawAmount / 1.05 : rawAmount;
-    const tax = total * 0.05;
-    const amount = total + tax;
-    
+    const itemAmount = isTaxInclude ? evenRound(rawAmount / 1.05) : rawAmount;
 
-    return {
+    return attachInvoiceCalculation({
       date: new Date,
       buyerBAN,
       buyerName,
-      total,
       taxType,
-      tax,
-      amount,
       items: [
         {
           name: itemName,
-          price: total,
+          price: itemAmount,
           quantity: 1
         }
       ]
-    };
+    });
   }
 
   if (matchMultiple) {
@@ -221,7 +41,6 @@ const handleInvoiceCreate = (message) => {
 
     // 處理多筆商品
     const itemsRegex = /-\s(.+)\s(.+)\s(.+)/g;
-    let total = 0;
     let items = [];
     let match;
     while ((match = itemsRegex.exec(itemsString))) {
@@ -234,35 +53,46 @@ const handleInvoiceCreate = (message) => {
         price,
         quantity,
       });
-
-      total += price * quantity;
     }
 
-    const tax = total * 0.05;
     const taxType = 1;
-    const amount = total + tax;
-
-    return {
+    
+    return attachInvoiceCalculation({
       date: new Date(),
       buyerBAN,
       buyerName,
-      total,
-      tax,
       taxType,
-      amount,
       items
-    };
+    });
   }
 
   return null; // 無效的格式
 };
 
-export const onText = (event) => {
+const handleInvoiceCreate = async (event) => {
+  const recognizedInvoice = parseInvoice(event.message.text);
+
+  if(!recognizedInvoice)
+    throw new Error('Unable to recognize invoice.');
+
+  const invoice = await createInvoice(event.source.userId, recognizedInvoice);
+
+  return createInvliceFlexMessage(invoice, {
+    header: invoiceHeadMessage("已為您開立發票內容如下"),
+    footer: invoiceFootActions([{
+      type: 'uri',
+      label: '變更內容',
+      uri: `${LIFF_URL}/invoices/${invoice?.id}/edit`,
+    }]),
+  });
+
+}
+
+
+export const onText = async (event) => {
 
   if(event.message.text.startsWith('幫我開發票')) {
-    const invoice = handleInvoiceCreate(event.message.text);
-    // todo: save invoice
-    return createInvliceFlexMessage(invoice);
+    return handleInvoiceCreate(event);
   }
   
   if(event.message.text === '小幫手') {

@@ -1,5 +1,6 @@
 import { request } from "./api-base";
 import { append, document, documents, save, update } from "./api-firebase";
+import { attachInvoiceCalculation } from "./util-invoice";
 
 export const register = async (lineProfile) => {
   let lineUserConfig = await document(`line-users`, lineProfile.userId);
@@ -47,32 +48,20 @@ export const createInvoice = async (userId, invoice) => {
   const { companyName : sellerName} = await companyInfo(invoice.sellerBAN).catch(err=>({companyName: ''}));
   const { companyName: buyerName } = await companyInfo(invoice.buyerBAN).catch(err=>({companyName: ''}));
 
-  for(let i = 0; i < invoice.items.length; i++){
-    let { price, quantity } = invoice.items[i];
-    invoice.items[i].amount = parseFloat(price) * parseFloat(quantity);
-  }
+  // @todo: invoiceId 應該改用發票字軌
 
-  const subtotal = !!invoice?.items ? 
-    invoice.items.reduce((pre, cur)=> 
-      pre + parseFloat(cur.price) * parseFloat(cur.quantity), 0):0;
-  const tax = invoice?.taxType === 1 ? Math.round(subtotal * 0.05) : 0;
-  const amount = subtotal + tax;
-
-  const invoiceData = {
+  const invoiceData = attachInvoiceCalculation({
     ...invoice,
     date: new Date(),
     owner: userId,
     sellerName,
     buyerName,
-    subtotal,
-    tax,
-    amount,
     createAt: new Date()
-  };
+  });
 
   const { id: invoiceId } = await append('invoices', invoiceData);
   await update('invoices', invoiceId, { id: invoiceId});
-  return invoiceId;
+  return { id: invoiceId, ...invoiceData};
 }
 
 export const updateInvoice = (invoiceId, invoice) => 
