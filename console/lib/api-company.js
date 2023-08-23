@@ -50,18 +50,26 @@ export const createInvoice = async (userId, invoice) => {
   // @todo: 找不到公司名稱時應如何處理？
   const config = await lineUserConfig(userId);
   const [sellerBAN] = config.companies;
-  const { companyName: sellerName} = await companyInfo(sellerBAN).catch(err => {console.error(err); return {companyName: ''}});
-  const { companyName: buyerName } = await companyInfo(invoice?.buyerBAN).catch(err => {console.error(err); return {companyName: ''}});
+  const { 
+    companyName: sellerName,
+    companyAddress: sellerAddress
+  } = await companyInfo(sellerBAN).catch(err => {console.error(err); return {companyName: ''}});
+  const { 
+    companyName: buyerName,
+    companyAddress: buyerAddress
+  } = await companyInfo(invoice?.buyerBAN).catch(err => {console.error(err); return {companyName: ''}});
 
   // @todo: invoiceId 應該改用發票字軌
 
   const invoiceData = attachInvoiceCalculation({
+    date: new Date(),
     ...invoice,
     owner: userId,
     sellerBAN,
     sellerName,
+    sellerAddress,
     buyerName,
-    date: new Date(),
+    buyerAddress,
     createAt: new Date()
   });
 

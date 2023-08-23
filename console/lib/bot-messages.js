@@ -1,5 +1,14 @@
 import moment from "moment";
 
+const numeric = (value) =>
+  new Intl.NumberFormat().format(value);
+
+const money = (value) =>
+  new Intl.NumberFormat('zh-TW', { 
+    style: 'currency', 
+    currency: 'TWD'
+  }).format(value);
+
 export const createInvliceFlexMessage = (invoice, {header = null, footer = null}) => {
   const { date = new Date(), buyerBAN, buyerName, tax, amount } = invoice;
   
@@ -87,7 +96,7 @@ export const createInvliceFlexMessage = (invoice, {header = null, footer = null}
             },
             {
               type: 'text',
-              text: item.price.toFixed(0),
+              text: numeric(item.price),
               align: 'end',
             },
           ],
@@ -104,11 +113,13 @@ export const createInvliceFlexMessage = (invoice, {header = null, footer = null}
             {
               type: 'text',
               text: '稅額',
+              flex: 1,
             },
             {
               type: 'text',
-              text: tax.toFixed(),
+              text: numeric(tax),
               align: 'end',
+              flex: 4,
             },
           ],
           margin: '10px',
@@ -124,12 +135,14 @@ export const createInvliceFlexMessage = (invoice, {header = null, footer = null}
             {
               type: 'text',
               text: '總計',
+              flex: 1,
             },
             {
               type: 'text',
-              text: amount.toFixed(),
+              text: numeric(amount),
               size: '32px',
               align: 'end',
+              flex: 4,
             },
           ],
           margin: '10px',
@@ -146,7 +159,7 @@ export const createInvliceFlexMessage = (invoice, {header = null, footer = null}
 
   return {
     type: 'flex',
-    altText: `開立發票金額 ${amount.toFixed()} 給 ${buyerName}`,
+    altText: `開立發票金額 ${money(amount)} 給 ${buyerName}`,
     contents
   }
 };
