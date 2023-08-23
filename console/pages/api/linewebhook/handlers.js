@@ -3,6 +3,61 @@ import { createInvliceFlexMessage, invoiceFootActions, invoiceHeadMessage } from
 import { attachInvoiceCalculation, evenRound } from "@/lib/util-invoice";
 const { LIFF_URL } = process.env;
 
+const parseSellerName = text =>
+    text.match(/幫我開(?<sellerName>\S+)?發票/).groups.sellerName;
+
+const parseBuyerName = text => {
+    const match = text.match(/(?:給|抬頭\s*[：:]?\s*)(?<buyerName>\S+)/);
+    return match && match.groups && match.groups.buyerName ? match.groups.buyerName : null;
+};
+
+const parseBuyerBAN = text => {
+    const match = text.match(/統編\s*[:：]?\s*(?<buyerBAN>\d{8})/);
+    return match && match.groups && match.groups.buyerBAN ? match.groups.buyerBAN : null;
+};
+
+const parseAmount = text => {
+    const match = text.match(/金額\s*[:：]?\s*(?<rawAmount>[$,0-9]+)/);
+    return match && match.groups && match.groups.rawAmount ? match.groups.rawAmount : null;
+};
+    
+const parseTaxMethod = text =>
+    text.match(/(?<taxMethod>含稅|未稅|稅外加)/).groups.taxMethod;
+
+const parseSingleItemName = text => {
+    const match = text.match(/品項\s*[:：]?\s*(?<singleItemName>\S+)/);
+    return match && match.groups && match.groups.singleItemName ? match.groups.singleItemName : null;
+};
+
+const parseDate = (text) => {
+    const regex = /(?:(?<year>\d{2,4})[ 年/-])?(?:(?<month>\d{1,2})[ 月/-])?(?<day>\d{1,2})[ 日號]?/;
+    const match = text.match(regex);
+
+    if (match && match.groups) {
+        const currentDate = new Date();
+        const year = match.groups.year ? parseInt(match.groups.year, 10) : currentDate.getFullYear();
+        const month = match.groups.month ? parseInt(match.groups.month, 10) - 1 : currentDate.getMonth(); // JavaScript 的月份是從 0 開始的
+        const day = parseInt(match.groups.day, 10);
+
+        return new Date(year, month, day);
+    }
+
+    return new Date();
+};
+
+const parseInvoiceMessage = text => ({
+  date: parseDate(text),
+  sellerName: parseSellerName(text),
+  buyerName: parseBuyerName(text),
+  buyerBAN: parseBuyerBAN(text),
+  taxMethod: parseTaxMethod(text),
+  amount: parseAmount(text),
+  items: [{
+      name: parseSingleItemName(input),
+      quantity: 1
+  }]
+});
+
 const parseInvoice = (message) => {
   const regexSingle = /幫我開發票給(.+) 統編(.+) (.+) 金額(.+) (含稅|稅外加)/;
   const regexMultiple = /幫我開發票給(.+) 統編(.+)((\n-.+)+)/;
@@ -18,6 +73,7 @@ const parseInvoice = (message) => {
     const isTaxInclude = matchSingle[5] === '含稅';
     const taxType = 1;
     const itemAmount = isTaxInclude ? evenRound(rawAmount / 1.05) : rawAmount;
+    const targetAmount = isTaxInclude ? rawAmount : null;
 
     return attachInvoiceCalculation({
       date: new Date,
@@ -31,7 +87,7 @@ const parseInvoice = (message) => {
           quantity: 1
         }
       ]
-    });
+    }, targetAmount );
   }
 
   if (matchMultiple) {

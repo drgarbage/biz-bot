@@ -9,10 +9,15 @@ export const evenRound = (num, decimalPlaces) => {
   return d ? r / m : r;
 }
 
-export const calculateInvoice = (invoice) => {
+export const calculateInvoice = (invoice, targetAmount) => {
   const total = evenRound(invoice.items.reduce(
     (p,c) => p + (parseFloat(c.price) * parseFloat(c.quantity)), 0));
-  const tax = invoice.taxType === 1 ? evenRound(total * 0.05) : 0;
+  const tax = 
+    invoice.taxType === 1 ? 
+    !!targetAmount ? 
+      targetAmount - total : 
+      evenRound(total * 0.05) : 
+      0;
   const amount = total + tax;
   
   return {
@@ -22,8 +27,8 @@ export const calculateInvoice = (invoice) => {
   }
 }
 
-export const attachInvoiceCalculation = (invoice) => {
-  const { total, tax, amount } = calculateInvoice(invoice);
+export const attachInvoiceCalculation = (invoice, targetAmount) => {
+  const { total, tax, amount } = calculateInvoice(invoice, targetAmount);
   return {
     ...invoice,
     total, 
