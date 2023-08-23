@@ -1,6 +1,8 @@
+import moment from "moment";
 import { request } from "./api-base";
 import { append, document, documents, save, update } from "./api-firebase";
 import { attachInvoiceCalculation } from "./util-invoice";
+import { FieldPath, Firestore, orderBy } from "firebase/firestore";
 
 export const register = async (lineProfile) => {
   let lineUserConfig = await document(`line-users`, lineProfile.userId);
@@ -22,8 +24,30 @@ export const register = async (lineProfile) => {
   return lineUserConfig;
 }
 
-// export const company = async (companyBAN) =>
-//   document('companies', companyBAN);
+export const nextInvoiceNumber = async (companyBAN) => {
+  const date = new Date();
+  const month = date.getMonth();
+  const monthGroup = Math.floor(month / 2) * 2; // 0: 1-2, 2: 3-4, 4: 5-6
+  const group = `${date.getFullYear()}-${String(monthGroup+1).padStart(2, '0')}-${String(monthGroup+2).padStart(2,'0')}`;
+  const available = true;
+  const order = orderBy('begin', 'asc');
+  const results = await documents(`/companies/${companyBAN}/invoice-packages`, {group, available, order});
+  const [ { begin, end, cursor } ] = results;
+  const prefix = begin.substr(0,2);
+  const beginValue = parseInt(begin.substr(2,8));
+  const endValue = parseInt(end.substr(2,8));
+  const cursorValue = parseInt(cursor.substr(2,8));
+  const nextValue = cursorValue+1;
+  const isAvailable = nextValue < endValue;
+  const nextInvoiceNumberValue = `${prefix}${String(nextValue).padStart(8, '0')}`;
+  
+  // todo: 檢查有沒有跳號的風險
+  await update(`/companies/${companyBAN}/invoice-packages`, `${group}-${begin}`, {
+    cursor: nextInvoiceNumberValue,
+    available: isAvailable
+  });
+  return nextInvoiceNumberValue;
+}
 
 export const setupLineUserConfig = async ({
   userId,
@@ -60,22 +84,28 @@ export const createInvoice = async (userId, invoice) => {
   } = await companyInfo(invoice?.buyerBAN).catch(err => {console.error(err); return {companyName: ''}});
 
   // @todo: invoiceId 應該改用發票字軌
-
+  // @todo: 如果目標日期不是當天，應該要排程到當天再開立發票，以確保發票字軌管理正確
+  const createAt = new Date();
+  const invoiceId = await nextInvoiceNumber(sellerBAN);
+  const invoiceDate = invoice?.date ?? createAt;
   const invoiceData = attachInvoiceCalculation({
-    date: new Date(),
     ...invoice,
+    invoiceId,
     owner: userId,
     sellerBAN,
     sellerName,
     sellerAddress,
     buyerName,
     buyerAddress,
-    createAt: new Date()
+    date: invoiceDate,
+    createAt
   });
 
-  const { id: invoiceId } = await append('invoices', invoiceData);
-  await update('invoices', invoiceId, { id: invoiceId});
-  return { id: invoiceId, ...invoiceData};
+  // const { id: invoiceId } = await append('invoices', invoiceData);
+  // await update('invoices', invoiceId, { id: invoiceId});
+  // return { id: invoiceId, ...invoiceData};
+  await save('invoices', invoiceId, invoiceData);
+  return invoiceData;
 }
 
 export const updateInvoice = (invoiceId, invoice) => 

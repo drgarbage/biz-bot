@@ -19,6 +19,10 @@ export const InvoiceView = (props) =>{
               <lavbel style={{flex:2}}>{invoice?.buyerBAN}</lavbel>
             </Box>
             <Box sx={{display: 'flex', flexDirection: 'row', color: 'gray'}}>
+              <lavbel style={{flex:1}}>發票號碼</lavbel>
+              <lavbel style={{flex:2}}>{invoice?.invoiceId}</lavbel>
+            </Box>
+            <Box sx={{display: 'flex', flexDirection: 'row', color: 'gray'}}>
               <lavbel style={{flex:1}}>發票日期</lavbel>
               <lavbel style={{flex:2}}>{format.dateTime(invoice?.date?.toDate(), {year: 'numeric', month: 'numeric', day: 'numeric'})}</lavbel>
             </Box>

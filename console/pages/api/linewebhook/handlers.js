@@ -90,7 +90,7 @@ const handleInvoiceCreate = async (event) => {
       footer: invoiceFootActions([{
         type: 'uri',
         label: '變更內容',
-        uri: `${LIFF_URL}/invoices/${invoice?.id}/edit`,
+        uri: `${LIFF_URL}/invoices/${invoice?.invoiceId}/edit`,
       }]),
     });
 

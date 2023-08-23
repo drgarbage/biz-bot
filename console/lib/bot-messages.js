@@ -10,7 +10,7 @@ const money = (value) =>
   }).format(value);
 
 export const createInvliceFlexMessage = (invoice, {header = null, footer = null}) => {
-  const { date = new Date(), buyerBAN, buyerName, tax, amount } = invoice;
+  const { date = new Date(), invoiceId, buyerBAN, buyerName, tax, amount } = invoice;
   
   const contents = {
     type: 'bubble',
@@ -46,6 +46,28 @@ export const createInvliceFlexMessage = (invoice, {header = null, footer = null}
                 {
                   type: 'text',
                   text: buyerBAN,
+                  wrap: true,
+                  color: '#666666',
+                  size: 'sm',
+                  flex: 3,
+                },
+              ],
+            },
+            {
+              type: 'box',
+              layout: 'baseline',
+              spacing: 'sm',
+              contents: [
+                {
+                  type: 'text',
+                  text: '發票號碼',
+                  color: '#aaaaaa',
+                  size: 'sm',
+                  flex: 1,
+                },
+                {
+                  type: 'text',
+                  text: invoiceId,
                   wrap: true,
                   color: '#666666',
                   size: 'sm',

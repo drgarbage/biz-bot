@@ -45,7 +45,8 @@ export const documents = async (path, matches) => {
     }
   }
 
-  queryArgs.push(orderBy('createAt', 'desc'));
+  if(!matches?.order)
+    queryArgs.push(orderBy('createAt', 'desc'));
 
   const q = query(ref, ...queryArgs);
   const snapshot = await getDocs(q);

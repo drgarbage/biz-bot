@@ -25,9 +25,8 @@ const convertSingleToCSV = (invoices, format) => {
 
   for(let m = 0; m < invoices.length; m++) {
     let invoice = invoices[m];
-    let invoiceNo = 'BN' + String(m).padStart(10, '0'); // todo: use correct invoice number
     csv.push(CSV_M
-      .replace('[發票號碼]',invoiceNo || '')
+      .replace('[發票號碼]',invoice.invoiceId || '')
       .replace('[發票日期]',format.dateTime(invoice.date.toDate(), {
         year: 'numeric',
         month: 'numeric',
@@ -59,7 +58,7 @@ const convertSingleToCSV = (invoices, format) => {
     for(let d = 0; d < invoice.items.length; d++) {
       let item = invoice.items[d];
       csv.push(CSV_D
-        .replace('[發票號碼]',invoiceNo || '')
+        .replace('[發票號碼]',invoice.invoiceId || '')
         .replace('[品名編號]','')
         .replace('[發票品名]',item.name || '')
         .replace('[相關號碼]','')
@@ -69,7 +68,7 @@ const convertSingleToCSV = (invoices, format) => {
         .replace('[單價2]','')
         .replace('[單位2]','')
         .replace('[數量2]','')
-        .replace('[金額]', item.amount || '')
+        .replace('[金額]', item.amount || item.price * item.quantity || '')
         .replace('[單一欄位備註]','')
       )
     }
@@ -87,9 +86,8 @@ const convertSingleToCSV = (invoices, format) => {
 //   const csv = [...CSV_HEADER];
 //   for(let m = 0; m < invoices.length; m++) {
 //     let invoice = invoices[m];
-//     let invoiceNo = 'BN' + String(m).padStart(10, '0'); // todo: use correct invoice number
 //     csv.push(CSV_M
-//       .replace('[發票號碼]',invoiceNo)
+//       .replace('[發票號碼]',invoice.invoiceId || '')
 //       .replace('[發票日期]',format.dateTime(invoice.date.toDate(), {
 //         year: 'numeric',
 //         month: 'numeric',
@@ -114,7 +112,7 @@ const convertSingleToCSV = (invoices, format) => {
 //     for(let d = 0; d < invoice.items.length; d++) {
 //       let item = invoice.items[d];
 //       csv.push(CSV_D
-//         .replace('[發票號碼]',invoiceNo || '')
+//         .replace('[發票號碼]',invoice.invoiceId || '')
 //         .replace('[品名編號]','')
 //         .replace('[發票品名]',item.name || '')
 //         .replace('[相關號碼]','')
@@ -209,7 +207,7 @@ const page = () => {
                 <ListItemText>
                   <Box display="flex" flexDirection="column">
                     <strong style={{fontSize: '24px'}}>{`$ ${format.number(invoice?.amount)}`}</strong>
-                    <small>{'BN' + String(index).padStart(10, '0')}</small>
+                    <small>{invoice?.invoiceId}</small>
                     <small>{invoice?.buyerName}</small>
                     <small>{moment(invoice?.date.toDate()).format('yyyy/MM/DD')}</small>
                   </Box>
