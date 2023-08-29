@@ -147,12 +147,14 @@ const page = () => {
   }, [customerId, setInvoices, setSeller]);
 
   const downloadBatchCSV = () => {
+    const first = invoices[0];
+    const last = invoices[invoices.length-1];
     const csvData = convertSingleToCSV(invoices, format);
     const blob = new Blob([csvData], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'invoices.csv';
+    a.download = `${first.sellerBAN}存證開立發票-${first.invoiceId}-${last.invoiceId}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -160,12 +162,13 @@ const page = () => {
   }
 
   const downloadSingleCSV = (index) => {
-    const csvData = convertSingleToCSV([invoices[index]], format);
+    const invoice = invoices[index];
+    const csvData = convertSingleToCSV([invoice], format);
     const blob = new Blob([csvData], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'invoices.csv';
+    a.download = `${invoice.sellerBAN}存證開立發票-${invoice.buyerBAN}-${invoice.invoiceId}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

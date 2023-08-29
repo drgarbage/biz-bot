@@ -102,3 +102,8 @@ export const upload = async (path, base64Data, meta = undefined) => {
   const imageUrl = await getDownloadURL(storageRef);
   return imageUrl;
 };
+
+export const exist = async (path, id) => {
+  return (await document(path, id)) !== null;
+}
+  
