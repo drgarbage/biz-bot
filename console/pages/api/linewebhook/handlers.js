@@ -1,4 +1,4 @@
-import { createInvoice } from "@/lib/api-company";
+import { createInvoice, findCompany, register } from "@/lib/api-company";
 import { createInvliceFlexMessage, invoiceFootActions, invoiceHeadMessage } from "@/lib/bot-messages";
 import { attachInvoiceCalculation, evenRound } from "@/lib/util-invoice";
 const { LIFF_URL } = process.env;
@@ -80,13 +80,17 @@ const handleInvoiceCreate = async (event) => {
       return {
         type: 'text',
         text: '很抱歉，我不認得您指定的格式，請參考以下格式：\n\n幫我開發票\n日期：112/2/10\n抬頭：客戶公司名\n統編：12345678\n品名：商品名稱\n金額：NT50,000 含稅'
-      }
+      };
     }
-  
-    const invoice = await createInvoice(event.source.userId, recognizedInvoice);
+
+    // todo: 根據 sellerName 判斷要用哪個公司開發票
+    const { sellerName } = recognizedInvoice;
+    const userId = event?.source?.userId;
+    const sellerBAN = await findCompany(userId, sellerName);
+    const invoice = await createInvoice(userId, sellerBAN, recognizedInvoice);
   
     return createInvliceFlexMessage(invoice, {
-      header: invoiceHeadMessage("已為您開立發票內容如下"),
+      header: invoiceHeadMessage('已為您開立發票內容如下'),
       footer: invoiceFootActions([{
         type: 'uri',
         label: '變更內容',
@@ -110,7 +114,7 @@ const handleInvoiceCreate = async (event) => {
 
 export const onText = (event) => {
 
-  if(event.message.text.startsWith('幫我開發票')) {
+  if(event.message.text.startsWith('幫我開') && event.message.text.indexOf('發票') >= 0) {
     return handleInvoiceCreate(event);
   }
   

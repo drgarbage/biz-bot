@@ -149,10 +149,8 @@ export const invoice = (invoiceId) =>
 export const invoices = (options) =>
   documents('invoices', options);
 
-export const createInvoice = async (userId, invoice) => {
+export const createInvoice = async (userId, sellerBAN, invoice) => {
   // @todo: 找不到公司名稱時應如何處理？
-  const config = await lineUserConfig(userId);
-  const [sellerBAN] = config.companies;
   const { 
     companyName: sellerName,
     companyAddress: sellerAddress
@@ -196,6 +194,27 @@ export const companyInfo = async (companyBAN) => {
   return isBrowser ?
     request(`/api/company/${companyBAN}`):
     nativeFetchCompanyInfo(companyBAN);
+}
+
+export const findCompany = async (userId, query = null) => {
+  const profile = await lineUserConfig(userId);
+  const { companies } = profile;
+  
+  if(!query)
+    return companies[0];
+
+  if(companies.indexOf(query) >= 0)
+    return query;
+
+  for(let i = 0; i < companies.length; i++){
+    const companyBAN = companies[i];
+    const info = await companyInfo(companyBAN);
+    if( info.companyName.indexOf(query) >= 0 || 
+        info.companyBAN.indexOf(query) >= 0 )
+      return companyBAN;
+  }
+
+  return companies[0];
 }
 
 // https://eip.fia.gov.tw/OAI/api/businessRegistration/91543313
