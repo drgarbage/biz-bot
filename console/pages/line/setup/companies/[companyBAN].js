@@ -113,26 +113,25 @@ const page = () => {
   return (
     <Container>
 
-      {!!profile &&
-
-        <Stack direction="row" gap={1} alignItems="center">
-          <Avatar 
-            sx={{width:24,height:24}}
-            alt={profile?.displayName} 
-            src={profile?.pictureUrl} 
-            />
-          <small>{profile?.displayName}</small>
-          <Box sx={{flex:1}}>&nbsp;</Box>
-          {/* <Switch checked={editMode} onChange={e => setEditMode(e.target.checked)} color="error" /> */}
-        </Stack>
-
-      }
-
-      {!!profile &&
-        <Divider />
-      }
-
       <Stack direction="column" mt={2} gap={2}>
+
+        {!!profile &&
+
+          <Stack direction="row" gap={1} alignItems="center">
+            <Avatar 
+              sx={{width:24,height:24}}
+              alt={profile?.displayName} 
+              src={profile?.pictureUrl} 
+              />
+            <small>{profile?.displayName}</small>
+            <Box sx={{flex:1}}>&nbsp;</Box>
+          </Stack>
+
+        }
+
+        {!!profile &&
+          <Divider />
+        }
 
         <BANProfile companyBAN={companyBAN} />
 

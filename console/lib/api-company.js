@@ -34,17 +34,6 @@ export const appendInvoicePackage = async (companyBAN, {group, prefix, begin, en
   if(await exist(path, id)) 
     throw new Error("Package existed.");
 
-    console.log(path, id, {
-      id,
-      group,
-      prefix,
-      begin,
-      end,
-      cursor: begin,
-      available: true,
-      createAt
-  });
-
   await save(path, id, {
       id,
       group,
@@ -125,7 +114,6 @@ export const nextInvoiceNumber = async (companyBAN) => {
   const order = orderBy('begin', 'asc');
   const results = await documents(`/companies/${companyBAN}/invoice-packages`, {group, available, order});
   const [ { prefix, begin, end, cursor } ] = results;
-  const beginValue = parseInt(begin);
   const endValue = parseInt(end);
   const cursorValue = parseInt(cursor);
   const nextValue = cursorValue+1;
@@ -206,7 +194,7 @@ export const updateInvoice = (invoiceId, invoice) =>
 export const companyInfo = async (companyBAN) => {
   const isBrowser = typeof window !== 'undefined';
   return isBrowser ?
-    request(`${host}/api/company/${companyBAN}`):
+    request(`/api/company/${companyBAN}`):
     nativeFetchCompanyInfo(companyBAN);
 }
 
