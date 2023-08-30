@@ -1,3 +1,4 @@
+import moment from "moment";
 import { request } from "./api-base";
 import { document, documents, exist, save, update, remove } from "./api-firebase";
 import { attachInvoiceCalculation } from "./util-invoice";
@@ -105,7 +106,7 @@ export const invoicePackages = async (companyBAN, month, includePreviousMonth = 
 export const invoicePackagesByGroup = (companyBAN, group) =>
   documents(`/companies/${companyBAN}/invoice-packages`, {group});
 
-export const nextInvoiceNumber = async (companyBAN) => {
+export const nextInvoiceNumber = async (companyBAN, targetInvoiceDate) => {
   const date = new Date();
   const month = date.getMonth();
   const monthGroup = Math.floor(month / 2) * 2; // 0: 1-2, 2: 3-4, 4: 5-6
@@ -113,18 +114,25 @@ export const nextInvoiceNumber = async (companyBAN) => {
   const available = true;
   const order = orderBy('begin', 'asc');
   const results = await documents(`/companies/${companyBAN}/invoice-packages`, {group, available, order});
-  const [ { prefix, begin, end, cursor } ] = results;
+  const [ { prefix, begin, end, cursor, lastInvoiceDate } ] = results;
   const endValue = parseInt(end);
   const cursorValue = parseInt(cursor);
   const nextValue = cursorValue+1;
   const isAvailable = nextValue < endValue;
   const nextInvoiceNumberValue = `${prefix}${String(nextValue).padStart(8, '0')}`;
+
+  // todo: 檢查時間是否連貫
+  // todo: 同一天還是可以開
+  if(targetInvoiceDate < lastInvoiceDate.toDate())
+    throw new Error(`發票時間早於上次開立之發票 (${moment(lastInvoiceDate.toDate()).format('yyyy/MM/dd')})`);
   
   // todo: 檢查有沒有跳號的風險
   await update(`/companies/${companyBAN}/invoice-packages`, `${group}-${prefix}${begin}`, {
     cursor: String(nextValue).padStart(8, '0'),
-    available: isAvailable
+    available: isAvailable,
+    lastInvoiceDate: targetInvoiceDate
   });
+  
   return nextInvoiceNumberValue;
 }
 
@@ -151,6 +159,7 @@ export const invoices = (options) =>
 
 export const createInvoice = async (userId, sellerBAN, invoice) => {
   // @todo: 找不到公司名稱時應如何處理？
+  // @todo: 開之前檢查目標日期是否跟過去不連貫
   const { 
     companyName: sellerName,
     companyAddress: sellerAddress
@@ -164,8 +173,8 @@ export const createInvoice = async (userId, sellerBAN, invoice) => {
   // @todo: 如果目標日期不是當天，應該要排程到當天再開立發票，以確保發票字軌管理正確
   // @todo: 避免 invoiceId 重複時，覆蓋別人的發票
   const createAt = new Date();
-  const invoiceId = await nextInvoiceNumber(sellerBAN);
   const invoiceDate = invoice?.date ?? createAt;
+  const invoiceId = await nextInvoiceNumber(sellerBAN, invoiceDate);
   const invoiceData = attachInvoiceCalculation({
     ...invoice,
     invoiceId,
