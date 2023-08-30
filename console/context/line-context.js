@@ -78,7 +78,7 @@ export const WithLineContext = (props) => {
 
     (async () => {
       await liff.init({
-        liffId: '2000292758-DAkm7XvB',
+        liffId: process.env.NEXT_PUBLIC_LIFF_ID,
         withLoginOnExternalBrowser: true, 
       });
       const profile = await liff.getProfile();
