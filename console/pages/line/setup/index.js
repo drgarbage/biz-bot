@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useLineContext } from "@/context/line-context";
 import { 
-  Container, Stack, TextField,
-  Button, Avatar, Box, Divider, ButtonGroup, List, ListItem, ListItemText,
+  Container, Stack, 
+  Button, Avatar, Box, Divider, Paper,
 } from "@mui/material";
-import { companyInfo, setupLineUserConfig, invoicePackages as fetchInvoicePackages, appendInvoicePackagesByCSV } from "@/lib/api-company";
 import BANField from '@/components/view-ban';
+import BANProfile from '@/components/view-ban-profile';
 import LineLayout from '@/components/layout-line';
 import Head from "next/head";
+import liff from "@line/liff";
 
 
 const Section = ({children}) =>
@@ -21,67 +22,27 @@ const Section = ({children}) =>
 
 const page = () => {
   const router = useRouter();
-  const { profile } = useLineContext();
-  const [configs, setConfigs] = useState({
-    companyBAN: null,
-    eInvoiceAccount: null,
-    eInvoicePassword: null
-  });
-  const [invoicePackages, setInvoicePackages] = useState([]);
-  const [state, setState] = useState(0);
+  const { profile, updateCompany, addCompany } = useLineContext();
+  const [ companyBAN, setCompanyBAN ] = useState();
+
+  useEffect(() => {
+    if(!profile || !profile?.companies || profile?.companies?.length <= 0) return;
+    setCompanyBAN(profile.companies[0]);
+  }, [profile]);
 
   const saveAndContinue = async () => {
     try{
-      await setupLineUserConfig({
-        userId: profile.userId,
-        ...configs
-      });
-      router.replace('/line/setup/saved');
+      if (profile?.companies.length > 0)
+        await updateCompany(profile?.companies[0], companyBAN);
+      else
+        await addCompany(companyBAN);
     }catch(err){
       console.error(err);
       alert(err.message);
     }
   }
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      try {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const csv = event.target.result;
-          await appendInvoicePackagesByCSV(profile.companies[0], csv);
-          alert('檔案已上傳！');
-          setState(state+1);
-        };
-        reader.readAsText(file);
-      } catch (error) { 
-        console.error("Error uploading CSV:", error);
-      }
-    }
-  };
-
-  useEffect(()=>{
-    if(!profile?.userId) return;
-    setConfigs({
-      companyBAN: profile.companies[0],
-      eInvoiceAccount: profile.eInvoiceAccount,
-      eInvoicePassword: profile.eInvoicePassword
-    });
-  }, [profile, setConfigs]);
-
-  useEffect(()=>{
-    if(!profile?.userId) return;
-    fetchInvoicePackages(profile.companies[0], new Date().getMonth())
-      .then(setInvoicePackages)
-      .catch(console.error);
-  }, [profile, state]);
-
-  const isReadyForSave = 
-    !!profile?.userId &&
-    !!configs?.companyBAN &&
-    !!configs?.eInvoiceAccount &&
-    !!configs?.eInvoicePassword;
+  const canSave = companyBAN?.length === 8;
 
   return (
     <Container>
@@ -119,61 +80,52 @@ const page = () => {
           size="small"
           label="統一編號"
           placeholder="請輸入貴公司統一編號"
-          value={configs?.companyBAN || ''}
-          onChange={e => setConfigs({...configs, companyBAN: e.target.value})}
+          value={companyBAN || ''}
+          onChange={e => setCompanyBAN(e.target.value)}
           />
 
-        <List>
-        { !!invoicePackages && invoicePackages.map( item => 
-          <ListItem>
-            <ListItemText 
-              primary={item.group}
-              secondary={`${item.prefix}${item.begin}-${item.prefix}${item.end}`}
-              />
-          </ListItem>
-          )}
-        </List>
+        { profile?.companies?.length > 0 && 
+          <Paper sx={{p:1}}>
+            <BANProfile companyBAN={profile?.companies[0]} />
+          </Paper>
+        }
 
-        <ButtonGroup fullWidth>
-
-          <Button 
-            disabled
-            variant="contained">
-            發票字軌
-          </Button>
-
-          <Button 
+        { profile?.companies?.length > 0 &&
+          <Button
+            fullWidth
+            color="inherit"
             variant="contained"
-            onClick={()=>{}}
-          >
-            手動加入
+            onClick={() => router.push(`/line/setup/companies/${profile?.companies[0]}`)}>
+            管理發票字軌
           </Button>
-
-          <input 
-              type="file" 
-              accept=".csv" 
-              onChange={handleFileChange} 
-              style={{ display: 'none' }} 
-              id="csvInput"
-            />
-
-          <Button 
-            variant="contained"
-            onClick={() => document.getElementById('csvInput').click()}
-          >
-            上傳
-          </Button>
-          
-        </ButtonGroup>
+        }
 
         <Button 
-          fullWidth 
+          fullWidth
           variant="contained"
-          disabled={!isReadyForSave}
-          onClick={saveAndContinue}
-        >
-          加入另一家公司
+          disabled={!canSave} 
+          onClick={saveAndContinue}>
+            儲存
         </Button>
+
+        { profile?.companies?.length > 0 && 
+          <Button
+            fullWidth
+            color="inherit"
+            variant="contained"
+            onClick={()=>router.push(`/line/setup/companies`)}>
+            管理多個公司
+          </Button>
+        }
+
+        <Button
+          fullWidth
+          color="inherit"
+          variant="contained"
+          onClick={()=>liff.closeWindow()}>
+          關閉
+        </Button>
+
 
       </Stack>
 

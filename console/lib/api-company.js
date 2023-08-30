@@ -1,8 +1,7 @@
-import moment from "moment";
 import { request } from "./api-base";
-import { append, document, documents, exist, save, update } from "./api-firebase";
+import { document, documents, exist, save, update, remove } from "./api-firebase";
 import { attachInvoiceCalculation } from "./util-invoice";
-import { FieldPath, Firestore, orderBy } from "firebase/firestore";
+import { orderBy } from "firebase/firestore";
 
 export const register = async (lineProfile) => {
   let lineUserConfig = await document(`line-users`, lineProfile.userId);
@@ -22,6 +21,40 @@ export const register = async (lineProfile) => {
   }
 
   return lineUserConfig;
+}
+
+export const updateRegisteration = async (lineProfile) => 
+  update('line-users', lineProfile.userId, lineProfile);
+
+export const appendInvoicePackage = async (companyBAN, {group, prefix, begin, end}) => {
+  const createAt = new Date();
+  const id = `${group}-${prefix}${begin}`;
+  const path = `/companies/${companyBAN}/invoice-packages`;
+
+  if(await exist(path, id)) 
+    throw new Error("Package existed.");
+
+    console.log(path, id, {
+      id,
+      group,
+      prefix,
+      begin,
+      end,
+      cursor: begin,
+      available: true,
+      createAt
+  });
+
+  await save(path, id, {
+      id,
+      group,
+      prefix,
+      begin,
+      end,
+      cursor: begin,
+      available: true,
+      createAt
+  });
 }
 
 export const appendInvoicePackagesByCSV = async (companyBAN, csv) => {
@@ -59,6 +92,9 @@ export const appendInvoicePackagesByCSV = async (companyBAN, csv) => {
   }
 }
 
+export const deleteInvoicePackage = (companyBAN, id) => 
+  remove(`/companies/${companyBAN}/invoice-packages`, id);
+
 export const invoicePackages = async (companyBAN, month, includePreviousMonth = false) => {
   const results = [];
   const date = new Date();
@@ -77,6 +113,9 @@ export const invoicePackages = async (companyBAN, month, includePreviousMonth = 
   return results;
 }
 
+export const invoicePackagesByGroup = (companyBAN, group) =>
+  documents(`/companies/${companyBAN}/invoice-packages`, {group});
+
 export const nextInvoiceNumber = async (companyBAN) => {
   const date = new Date();
   const month = date.getMonth();
@@ -94,8 +133,8 @@ export const nextInvoiceNumber = async (companyBAN) => {
   const nextInvoiceNumberValue = `${prefix}${String(nextValue).padStart(8, '0')}`;
   
   // todo: 檢查有沒有跳號的風險
-  await update(`/companies/${companyBAN}/invoice-packages`, `${group}-${begin}`, {
-    cursor: nextInvoiceNumberValue,
+  await update(`/companies/${companyBAN}/invoice-packages`, `${group}-${prefix}${begin}`, {
+    cursor: String(nextValue).padStart(8, '0'),
     available: isAvailable
   });
   return nextInvoiceNumberValue;
@@ -129,11 +168,11 @@ export const createInvoice = async (userId, invoice) => {
   const { 
     companyName: sellerName,
     companyAddress: sellerAddress
-  } = await companyInfo(sellerBAN).catch(err => {console.error(err); return {companyName: ''}});
+  } = await companyInfo(sellerBAN).catch(err => {console.error(err); return {companyName: '', companyAddress: ''}});
   const { 
     companyName: buyerName,
     companyAddress: buyerAddress
-  } = await companyInfo(invoice?.buyerBAN).catch(err => {console.error(err); return {companyName: ''}});
+  } = await companyInfo(invoice?.buyerBAN).catch(err => {console.error(err); return {companyName: '', companyAddress: ''}});
 
   // @todo: invoiceId 應該改用發票字軌
   // @todo: 如果目標日期不是當天，應該要排程到當天再開立發票，以確保發票字軌管理正確
@@ -165,6 +204,19 @@ export const updateInvoice = (invoiceId, invoice) =>
   update('invoices', invoiceId, invoice);
 
 export const companyInfo = async (companyBAN) => {
-  const host = typeof window !== 'undefined' ? '' : 'https://bot.printii.com';
-  return request(`${host}/api/company/${companyBAN}`);
+  const isBrowser = typeof window !== 'undefined';
+  return isBrowser ?
+    request(`${host}/api/company/${companyBAN}`):
+    nativeFetchCompanyInfo(companyBAN);
+}
+
+// https://eip.fia.gov.tw/OAI/api/businessRegistration/91543313
+// https://data.gcis.nat.gov.tw/od/data/api/5F64D864-61CB-4D0D-8AD9-492047CC1EA6?$format=json&$filter=Business_Accounting_NO eq 
+export const nativeFetchCompanyInfo = async (companyBAN) => {
+  const rs = await request(`https://eip.fia.gov.tw/OAI/api/businessRegistration/${companyBAN}`);
+  return {
+    companyBAN,
+    companyName: rs?.businessNm ?? '',
+    companyAddress: rs?.businessAddress ?? ''
+  };
 }
