@@ -148,8 +148,12 @@ const page = () => {
           }
           onChange={e => setSelectedGroup(e.target.value)}>
           {
-            PackageGroupOptions.map(value => 
-              <MenuItem key={value.beginMonth} {...value} />
+            PackageGroupOptions.map(({beginMonth, value, children}) => 
+              <MenuItem 
+                key={beginMonth} 
+                value={value}
+                children={children}
+                />
             )
           }
         </Select>
