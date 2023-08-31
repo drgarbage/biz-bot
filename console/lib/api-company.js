@@ -114,7 +114,7 @@ export const nextInvoiceNumber = async (companyBAN, targetInvoiceDate) => {
   const available = true;
   const order = orderBy('begin', 'asc');
   const results = await documents(`/companies/${companyBAN}/invoice-packages`, {group, available, order});
-  const [ { prefix, begin, end, cursor, lastInvoiceDate } ] = results;
+  const [ { prefix, begin, end, cursor, lastInvoiceDate = new Date(0) } ] = results;
   const endValue = parseInt(end);
   const cursorValue = parseInt(cursor);
   const nextValue = cursorValue+1;
