@@ -121,10 +121,13 @@ export const nextInvoiceNumber = async (companyBAN, targetInvoiceDate) => {
   const isAvailable = nextValue < endValue;
   const nextInvoiceNumberValue = `${prefix}${String(nextValue).padStart(8, '0')}`;
 
+  const mLastDate = moment(lastInvoiceDate.toDate());
+  const mTargetDate = moment(targetInvoiceDate);
+
   // todo: 檢查時間是否連貫
   // todo: 同一天還是可以開
-  if(targetInvoiceDate < lastInvoiceDate.toDate())
-    throw new Error(`發票時間早於上次開立之發票 (${moment(lastInvoiceDate.toDate()).format('yyyy/MM/dd')})`);
+  if(!!lastInvoiceDate && mTargetDate.isBefore(mLastDate))
+    throw new Error(`發票時間早於上次開立之發票 (${mTargetDate.format('yyyy/MM/DD')} < ${mLastDate.format('yyyy/MM/DD')})`);
   
   // todo: 檢查有沒有跳號的風險
   await update(`/companies/${companyBAN}/invoice-packages`, `${group}-${prefix}${begin}`, {
@@ -187,6 +190,7 @@ export const createInvoice = async (userId, sellerBAN, invoice) => {
     date: invoiceDate,
     createAt
   });
+
 
   // const { id: invoiceId } = await append('invoices', invoiceData);
   // await update('invoices', invoiceId, { id: invoiceId});

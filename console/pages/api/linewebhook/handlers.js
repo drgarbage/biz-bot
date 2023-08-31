@@ -35,9 +35,9 @@ const parseSingleItemName = text => {
 };
 
 const parseDate = (text) => {
-  const regex = /(?:(?<year>\d{2,4})[ 年/-])?(?:(?<month>\d{1,2})[ 月/-])?(?<day>\d{1,2})[ 日號]?/;
+  const regex = /\b(?:(?<year>\d{2,4})[ 年/-])?(?:(?<month>\d{1,2})[ 月/-])?(?<day>\d{1,2})[ 日號]?\b/;
   const match = text.match(regex);
-
+    
   if (match && match.groups) {
     const currentDate = new Date();
     const year = match.groups.year ? parseInt(match.groups.year, 10) : currentDate.getFullYear();
@@ -46,7 +46,7 @@ const parseDate = (text) => {
     return new Date(year < 1911 ? year + 1911 : year, month, day);
   }
 
-  return new Date();
+  return moment().startOf('day').toDate();
 };
 
 const parseInvoice = (text) => {
