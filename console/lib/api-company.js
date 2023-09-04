@@ -232,11 +232,43 @@ export const findCompany = async (userId, query = null) => {
 
 // https://eip.fia.gov.tw/OAI/api/businessRegistration/91543313
 // https://data.gcis.nat.gov.tw/od/data/api/5F64D864-61CB-4D0D-8AD9-492047CC1EA6?$format=json&$filter=Business_Accounting_NO eq 
-export const nativeFetchCompanyInfo = async (companyBAN) => {
+
+export const serviceCompanyInfoViaEInvoice = async (companyBAN) => {
+  const [rs] = await request(`https://dataset.einvoice.nat.gov.tw/ods/portal/api/v1/InvoiceBusinessList?busiBan=${companyBAN}`);
+
+  if(!rs) 
+    throw new Error('Not found.');
+
+  return {
+    companyBAN,
+    companyName: rs?.busiNm ?? '',
+    companyAddress: rs?.address ?? ''
+  }
+}
+export const serviceCompanyInfoViaGCIS = async (companyBAN) => {
+  const [rs] = await request(`https://data.gcis.nat.gov.tw/od/data/api/5F64D864-61CB-4D0D-8AD9-492047CC1EA6?$format=json&$filter=Business_Accounting_NO eq ${companyBAN}`);
+  
+  if(!rs)
+    throw new Error('Not found.');
+
+  return {
+    companyBAN,
+    companyName: rs?.Company_Name ?? '',
+    companyAddress: rs?.Company_Location ?? ''
+  };
+}
+export const serviceCompanyInfoViaEIP = async (companyBAN) => {
   const rs = await request(`https://eip.fia.gov.tw/OAI/api/businessRegistration/${companyBAN}`);
   return {
     companyBAN,
     companyName: rs?.businessNm ?? '',
     companyAddress: rs?.businessAddress ?? ''
   };
+}
+export const nativeFetchCompanyInfo = async (companyBAN) => {
+  return Promise.race([
+    serviceCompanyInfoViaEInvoice(companyBAN),
+    serviceCompanyInfoViaGCIS(companyBAN),
+    serviceCompanyInfoViaEIP(companyBAN),
+  ]);
 }
