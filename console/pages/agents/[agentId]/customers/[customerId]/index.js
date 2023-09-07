@@ -11,6 +11,7 @@ import moment from "moment";
 const { default: Layout } = require("@/components/layout");
 
 const convertSingleToCSV = (invoices, format) => {
+  const BOM = '\ufeff'; // UTF-8 Byte Order Mark
   const CSV_HEADER = 'H,[賣方統一編號],[賣方公司名稱],[賣方公司地址],[賣方公司電話]';
   const CSV_M = 'M,[發票號碼],[發票日期],[發票類別],[買方統一編號],[買方公司名稱],[買方公司地址],[課稅別],[稅率],[銷售額合計],[營業稅額],[總計],[通關方式註記],[買受人簽署適用零稅率註記],[總備註]';
   const CSV_D = 'D,[發票品名],[數量],[單價],[金額],[單一欄位備註]';
@@ -73,7 +74,7 @@ const convertSingleToCSV = (invoices, format) => {
       )
     }
   }
-  return csv.join('\n');
+  return BOM + csv.join('\n');
 }
 
 // const convertBatchToCSV = (invoices, format) => {
