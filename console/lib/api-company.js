@@ -114,14 +114,21 @@ export const nextInvoiceNumber = async (companyBAN, targetInvoiceDate) => {
   const available = true;
   const order = orderBy('begin', 'asc');
   const results = await documents(`/companies/${companyBAN}/invoice-packages`, {group, available, order});
-  const [ { prefix, begin, end, cursor, lastInvoiceDate = new Date(0) } ] = results;
+
+  if (results.length == 0)
+    throw new Error(`找不到適用${group}的發票字軌，請檢查您的字軌設定`);
+
+  const [ { prefix, begin, end, cursor, lastInvoiceDate } ] = results;
+
+  // todo: 應該根據指定的日期來決定 group
+
   const endValue = parseInt(end);
   const cursorValue = parseInt(cursor);
   const nextValue = cursorValue+1;
   const isAvailable = nextValue < endValue;
   const nextInvoiceNumberValue = `${prefix}${String(nextValue).padStart(8, '0')}`;
 
-  const mLastDate = moment(lastInvoiceDate.toDate());
+  const mLastDate = moment(lastInvoiceDate?.toDate() || new Date());
   const mTargetDate = moment(targetInvoiceDate);
 
   // todo: 檢查時間是否連貫
