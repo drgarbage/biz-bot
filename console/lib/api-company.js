@@ -172,11 +172,13 @@ export const createInvoice = async (userId, sellerBAN, invoice) => {
   // @todo: 開之前檢查目標日期是否跟過去不連貫
   const { 
     companyName: sellerName,
-    companyAddress: sellerAddress
+    companyAddress: sellerAddress,
+    companyPhoneNumber: sellerPhoneNumber = '',
   } = await companyInfo(sellerBAN).catch(err => {console.error(err); return {companyName: '', companyAddress: ''}});
   const { 
     companyName: buyerName,
-    companyAddress: buyerAddress
+    companyAddress: buyerAddress,
+    companyPhoneNumber: buyerPhoneNumber = '',
   } = await companyInfo(invoice?.buyerBAN).catch(err => {console.error(err); return {companyName: '', companyAddress: ''}});
 
   // @todo: invoiceId 應該改用發票字軌
@@ -192,8 +194,10 @@ export const createInvoice = async (userId, sellerBAN, invoice) => {
     sellerBAN,
     sellerName,
     sellerAddress,
+    sellerPhoneNumber,
     buyerName,
     buyerAddress,
+    buyerPhoneNumber,
     date: invoiceDate,
     createAt
   });
@@ -220,9 +224,13 @@ export const updateCompanyConfigs = async (companyBAN, changes) =>
 
 export const companyInfo = async (companyBAN) => {
   const isBrowser = typeof window !== 'undefined';
-  return isBrowser ?
-    request(`/api/company/${companyBAN}`):
-    nativeFetchCompanyInfo(companyBAN);
+  const [config, info] = await Promise.all([
+    companyConfigs(companyBAN),
+    isBrowser ?
+      request(`/api/company/${companyBAN}`):
+      nativeFetchCompanyInfo(companyBAN)
+  ]);
+  return {...config, ...info};
 }
 
 export const findCompany = async (userId, query = null) => {
