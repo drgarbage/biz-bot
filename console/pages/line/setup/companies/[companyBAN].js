@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { useLineContext } from "@/context/line-context";
-import { appendInvoicePackage, appendInvoicePackagesByCSV, deleteInvoicePackage, invoicePackagesByGroup } from "@/lib/api-company";
-import { Avatar, Box, Button, Container, Divider, IconButton, InputAdornment, InputBase, List, ListItem, ListItemIcon, ListItemText, MenuItem, Paper, Select, Stack, Typography } from "@mui/material";
+import { 
+  appendInvoicePackage, 
+  appendInvoicePackagesByCSV, 
+  deleteInvoicePackage, 
+  invoicePackagesByGroup, 
+  companyConfigs as fetchCompanyConfigs,
+  saveCompanyConfigs
+} from "@/lib/api-company";
+import { Avatar, Box, Button, Container, Divider, IconButton, InputAdornment, InputBase, List, ListItem, ListItemIcon, ListItemText, MenuItem, Paper, Select, Stack, TextField, Typography } from "@mui/material";
 import LineLayout from '@/components/layout-line';
 import BANProfile from '@/components/view-ban-profile';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
@@ -48,6 +55,12 @@ const page = () => {
   const router = useRouter();
   const { profile } = useLineContext();
   const { companyBAN } = router.query;
+  const [companyConfigs, setCompanyConfigs] = useState({
+    // companyBAN: '',
+    // companyName: '',
+    // companyAddress: '',
+    companyPhoneNumber: '',
+  });
   const [invoicePackages, setInvoicePackages] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(defaultGroup.value);
   const [newPackage, setNewPackage] = useState(PackageInitial);
@@ -60,7 +73,11 @@ const page = () => {
   const reload = async () => {
     if(!companyBAN) return;
     try{
-      const results = await invoicePackagesByGroup(companyBAN, selectedGroup);
+      const [configs, results] = await Promise.all([
+        fetchCompanyConfigs(companyBAN),
+        invoicePackagesByGroup(companyBAN, selectedGroup)
+      ]);
+      if(!!configs) { setCompanyConfigs(configs); }
       setInvoicePackages(results);
     } catch (error) {
       console.error("Error loading packages.", error);
@@ -107,7 +124,20 @@ const page = () => {
     }
   };
 
+
   useEffect(() => { reload() },[companyBAN, selectedGroup, setInvoicePackages]);
+
+  const delayRef = useRef();
+  useEffect(() => {
+    clearTimeout(delayRef.current);
+    delayRef.current = setTimeout(() => {
+      saveCompanyConfigs(companyBAN, companyConfigs)
+        .catch(console.error);
+    }, 500);
+    return () => {
+      clearTimeout(delayRef.current);
+    };
+  }, [companyConfigs]);
   
 
   return (
@@ -134,6 +164,14 @@ const page = () => {
         }
 
         <BANProfile companyBAN={companyBAN} />
+
+        <Section>公司資料</Section>
+
+        <TextField 
+          label="聯絡電話" 
+          value={companyConfigs?.companyPhoneNumber || ''} 
+          onChange={e=>setCompanyConfigs({...companyConfigs, companyPhoneNumber: e.target.value})}
+          />
 
         <Divider />
 

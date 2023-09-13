@@ -209,6 +209,15 @@ export const createInvoice = async (userId, sellerBAN, invoice) => {
 export const updateInvoice = (invoiceId, invoice) => 
   update('invoices', invoiceId, invoice);
 
+export const companyConfigs = async (companyBAN) => 
+  document('companies', companyBAN);
+
+export const saveCompanyConfigs = async (companyBAN, configs) =>
+  save('companies', companyBAN, configs);
+
+export const updateCompanyConfigs = async (companyBAN, changes) =>
+  update('companies', companyBAN, changes);
+
 export const companyInfo = async (companyBAN) => {
   const isBrowser = typeof window !== 'undefined';
   return isBrowser ?
