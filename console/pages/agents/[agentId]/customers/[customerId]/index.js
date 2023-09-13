@@ -21,7 +21,7 @@ const convertSingleToCSV = (invoices, format) => {
     .replace('[賣方統一編號]',invoices[0].sellerBAN || '')
     .replace('[賣方公司名稱]',invoices[0].sellerName || '')
     .replace('[賣方公司地址]',invoices[0].sellerAddress || '')
-    .replace('[賣方公司電話]',invoices[0].sellerPhone || '')
+    .replace('[賣方公司電話]',invoices[0].sellerPhoneNumber || '')
   )
 
   for(let m = 0; m < invoices.length; m++) {

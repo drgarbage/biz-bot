@@ -16,6 +16,7 @@ export default (props) => {
       <Box sx={{fontSize: '80%'}}>{companyBAN}</Box>
       <Box sx={{fontSize: '120%'}}>{company?.companyName}</Box>
       <Box sx={{fontSize: '70%'}}>{company?.companyAddress}</Box>
+      <Box sx={{fontSize: '70%'}}>{company?.companyPhoneNumber}</Box>
     </Box>
   );
 }
