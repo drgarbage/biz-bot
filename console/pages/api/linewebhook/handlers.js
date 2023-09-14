@@ -1,7 +1,7 @@
 import { createInvoice, findCompany, register } from "@/lib/api-company";
 import { createInvliceFlexMessage, invoiceFootActions, invoiceHeadMessage } from "@/lib/bot-messages";
 import { attachInvoiceCalculation, evenRound } from "@/lib/util-invoice";
-const { LIFF_URL } = process.env;
+const { LIFF_URL, HOST_URL } = process.env;
 
 const parseSellerName = text => {
   const match = text.match(/幫我開(?<sellerName>\S+)?發票/);
@@ -95,6 +95,10 @@ const handleInvoiceCreate = async (event) => {
         type: 'uri',
         label: '變更內容',
         uri: `${LIFF_URL}/invoices/${invoice?.invoiceId}/edit`,
+      },{
+        type: 'uri',
+        label: '下載PDF',
+        uri: `${HOST_URL}/api/invoices/${invoice?.invoiceId}`,
       }]),
     });
 
@@ -135,7 +139,7 @@ export const onText = (event) => {
           {
             type: 'uri',
             label: '發票管理',
-            uri: 'https://bot.printii.com/agents/0/customers', 
+            uri: `${HOST_URL}/agents/0/customers`, 
           },
           {
             type: 'uri',
