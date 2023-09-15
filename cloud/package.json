@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "serve": "GOOGLE_APPLICATION_CREDENTIALS=../credentials/printii-biz-bot-firebase-adminsdk-3y4xs-9632762b94.json firebase emulators:start"
+  },
+  "dependencies": {}
+}

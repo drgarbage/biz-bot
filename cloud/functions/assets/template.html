@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>{{title}}</title>
+    <style>
+      * {
+        font-size: 8pt;
+      }
+
+      .title { 
+        font-size: 12pt; 
+        text-align: center;
+        margin-bottom: 1mm;
+      }
+
+      .subtitle {
+        font-size: 8pt; 
+        font-weight: normal;
+        text-align: center;
+      }
+
+      table {
+        width: 100%;
+      }
+
+      table.summary th,
+      table.summary td {
+        padding: 1mm;
+        text-align: left;
+      }
+      table.summary td:nth-child(3) {
+        text-align: right;
+      }
+
+      table.details {
+        border-left: 1mm solid black;
+        border-top: 1mm solid black;
+        border-right: 0.5mm solid black;
+        border-bottom: 0.5mm solid black;
+      }
+
+      table.details th,
+      table.details td {
+        border-right: 0.5mm solid black;
+        border-bottom: 0.5mm solid black;
+        padding: 1.5mm;
+      }
+
+      table.details td.num {
+        text-align: right;
+      }
+
+      table.details th small {
+        font-weight: normal;
+        font-size: 6pt;
+      }
+
+      table.details td.buyer-info {
+        font-size: 6pt;
+      }
+
+    </style>
+  </head>
+  <body>
+    <h1 class="page-header">
+      <div class="title">電子發票證明聯</div>
+      <div class="subtitle">{{date}}</div>
+    </h1>
+    
+    <table class="summary">
+      <tr>
+        <th>發票號碼</th>
+        <td colspan="3">{{invoiceId}}</td>
+        <td>格式：25</td>
+      </tr>
+      <tr>
+        <th>買　　方</th>
+        <td colspan="4">{{buyerName}}</td>
+      </tr>
+      <tr>
+        <th>統一編號</th>
+        <td colspan="4">{{buyerBAN}}</td>
+      </tr>
+      <tr>
+        <th>地　　址</th>
+        <td colspan="3">{{buyerAddress}}</td>
+        <td>第 1 頁 / 共 1 頁</td>
+      </tr>
+    </table>
+
+    <table class="details" cellspacing="0">
+      <tr>
+        <th width="40%" colspan="5">品名</th>
+        <th width="8%" colspan="1">數量</th>
+        <th width="8%" colspan="1">單價</th>
+        <th width="8%">金額</th>
+        <th width="24%">備註</th>
+      </tr>
+      {{#each items}}
+        <tr>
+          <td colspan="5">{{this.name}}&nbsp;</td>
+          <td colspan="1" class="num">{{this.quantity}}</td>
+          <td colspan="1" class="num">{{this.price}}</td>
+          <td class="num">{{this.amount}}</td>
+          <td></td>
+        </tr>
+      {{/each}}
+      <tr>
+        <th colspan="7" align="left">銷售額合計</th>
+        <td class="num">{{total}}</td>
+        <th>
+          <span>營業人蓋統一發票專用章</span><br/>
+          <small>(已條列營業人資料者得免蓋章)</small>
+        </th>
+      </tr>
+      <tr>
+        <th width="8%">營業稅</th>
+        <th width="8%">應稅</th>
+        <td width="8%" align="center">✔</td>
+        <th width="8%">零稅率</th>
+        <td width="8%"></td>
+        <th width="8%">免稅</th>
+        <td width="8%"></td>
+        <td class="num">{{tax}}</td>
+        <td class="buyer-info" rowspan="3">
+          賣方資訊<br/>
+          {{sellerName}}<br/>
+          {{sellerAddress}}
+          統一編號 {{sellerBAN}}<br/>
+        </td>
+      </tr>
+      <tr>
+        <th colspan="7" align="left">總計</th>
+        <td class="num">{{amount}}</td>
+      </tr>
+      <tr>
+        <th colspan="8">
+          <span style="float: left;">總計新台幣（中文大寫）</span>
+          <span style="float: right;" class="num">{{capitalAmount}}</span>
+        </th>
+      </tr>
+    </table>
+  </body>
+</html>
