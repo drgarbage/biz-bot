@@ -1,7 +1,7 @@
 import { createInvoice, findCompany, register } from "@/lib/api-company";
 import { createInvliceFlexMessage, invoiceFootActions, invoiceHeadMessage } from "@/lib/bot-messages";
 import { attachInvoiceCalculation, evenRound } from "@/lib/util-invoice";
-const { LIFF_URL, HOST_URL } = process.env;
+const { LIFF_URL, HOST_URL, PDF_URL } = process.env;
 
 const parseSellerName = text => {
   const match = text.match(/幫我開(?<sellerName>\S+)?發票/);
@@ -98,7 +98,7 @@ const handleInvoiceCreate = async (event) => {
       },{
         type: 'uri',
         label: '下載PDF',
-        uri: `${HOST_URL}/api/invoices/${invoice?.invoiceId}`,
+        uri: `${PDF_URL}/api/invoices/${invoice?.invoiceId}`,
       }]),
     });
 
