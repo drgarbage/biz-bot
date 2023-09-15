@@ -54,6 +54,7 @@ exports.invoices = functions.https.onRequest(async (req, res) => {
         return;
     }
 
+    const filename = `${invoiceId}.pdf`;
     const invoice = invoiceData.data();
     const data = {
       ...invoice,
@@ -70,7 +71,7 @@ exports.invoices = functions.https.onRequest(async (req, res) => {
 
     // 讀取 template.html
     const html = fs.readFileSync('assets/template.html', 'utf8');
-    const document = { html, data, path: "output.pdf", type: "buffer" };
+    const document = { html, data, path: filename, type: "buffer" };
     const options = {
       format: "A5",
       orientation: "landscape",
@@ -78,6 +79,7 @@ exports.invoices = functions.https.onRequest(async (req, res) => {
     };
     const pdfBuffer = await pdf.create(document, options);
     res.set('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename=${filename}`);
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Error generating PDF', error);
